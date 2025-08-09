@@ -1,0 +1,45 @@
+# Virtual environment (don't track the apartment, just the inventory list)
+venv/
+env/
+.env
+
+# Python compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data files (often too large for git)
+data/raw/
+data/cache/
+*.csv
+*.json
+*.xlsx
+
+# Logs and temporary files
+logs/
+*.log
+temp/
+
+# API keys and secrets
+config/secrets.py
+.env
+api_keys.txt
+
+# MongoDB data
+mongodb_data/
+
+# Reports (generated files)
+reports/*.pdf
+reports/*.html
+
+# OS files
+.DS_Store
+Thumbs.db
