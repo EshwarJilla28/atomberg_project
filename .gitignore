@@ -1,6 +1,8 @@
-# Virtual environment (don't track the apartment, just the inventory list)
+# Virtual environment 
 venv/
 env/
+venv_atomberg/
+venv_*/
 .env
 
 # Python compiled files
@@ -30,7 +32,6 @@ temp/
 
 # API keys and secrets
 config/secrets.py
-.env
 api_keys.txt
 
 # MongoDB data

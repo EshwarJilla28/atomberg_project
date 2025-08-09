@@ -1,1 +1,27 @@
-# Project requirements
+# === CORE AGENT FRAMEWORK ===
+langgraph==0.3.0
+langchain==0.3.0
+
+# === WEB SCRAPING & DATA COLLECTION ===
+selenium==4.15.0
+beautifulsoup4==4.12.0
+requests==2.31.0
+webdriver-manager==4.0.0
+
+# === DATA PROCESSING (NO NLP!) ===
+pandas>=2.2.2
+numpy>=1.26.4
+
+# === DATABASE & STORAGE ===
+pymongo==4.6.0
+
+# === BASIC VISUALIZATION ===
+matplotlib==3.7.0
+wordcloud==1.9.2
+
+# === UTILITIES ===
+python-dotenv==1.0.0
+pydantic>=2.5.0
+
+# === DEVELOPMENT TOOLS ===
+pytest==7.4.0
