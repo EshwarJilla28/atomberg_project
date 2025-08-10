@@ -61,6 +61,7 @@ class MultiPlatformState(TypedDict):
     # Enhanced Business Intelligence
     platform_recommendations: Dict[str, List[str]]  # Platform-specific actions
     influencer_opportunities: List[Dict[str, Any]]   # Key accounts identified
+    competitive_intelligence: Optional[Dict[str, Any]] = None
 
 def create_multiplatform_state(
     search_query: str = "smart fan", 

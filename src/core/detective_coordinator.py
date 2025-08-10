@@ -8,12 +8,12 @@ from ..core.detective_state import MultiPlatformState, create_multiplatform_stat
 from ..core.platform_orchestrator import platform_orchestration_agent
 from ..analyzers.quantitative_analyzer import quantitative_analysis_agent  
 from ..analyzers.sov_calculator import sov_calculation_agent
+from ..analyzers.competitive_scoring_analyzer import competitive_scoring_agent
 from typing import List
 
 def create_multiplatform_workflow() -> StateGraph:
     """
-    🏢 Create Enhanced Detective Agency Workflow with Multi-Platform Support
-    Backward compatible with existing Google-only workflow
+    🏢 Create Enhanced Detective Agency Workflow with Competitive Intelligence
     """
     
     print("🏢 Building Enhanced Multi-Platform Detective Agency Workflow...")
@@ -22,117 +22,67 @@ def create_multiplatform_workflow() -> StateGraph:
     workflow = StateGraph(MultiPlatformState)
     
     # Add agent nodes
-    workflow.add_node("platform_orchestrator", platform_orchestration_agent)  # NEW: Multi-platform coordination
-    workflow.add_node("quantitative_analyzer", quantitative_analysis_agent)   # EXISTING: Enhanced for multi-platform
-    workflow.add_node("sov_calculator", sov_calculation_agent)                # EXISTING: Enhanced for multi-platform  
-    workflow.add_node("insight_generator", enhanced_insight_generation_agent) # ENHANCED: Multi-platform insights
+    workflow.add_node("platform_orchestrator", platform_orchestration_agent)
+    workflow.add_node("quantitative_analyzer", quantitative_analysis_agent)
+    workflow.add_node("sov_calculator", sov_calculation_agent)
+    workflow.add_node("competitive_scorer", competitive_scoring_agent)  # NEW
+    workflow.add_node("insight_generator", enhanced_insight_generation_agent)
     
-    # Define the enhanced workflow
-    workflow.add_edge("platform_orchestrator", "quantitative_analyzer")    # Collect All → Analyze
-    workflow.add_edge("quantitative_analyzer", "sov_calculator")            # Analyze → Calculate SoV
-    workflow.add_edge("sov_calculator", "insight_generator")                # Calculate → Generate Insights
-    workflow.add_edge("insight_generator", END)                             # Insights → Complete
+    # Define the enhanced workflow with competitive scoring
+    workflow.add_edge("platform_orchestrator", "quantitative_analyzer")
+    workflow.add_edge("quantitative_analyzer", "sov_calculator")
+    workflow.add_edge("sov_calculator", "competitive_scorer")  # NEW: Add competitive scoring
+    workflow.add_edge("competitive_scorer", "insight_generator")
+    workflow.add_edge("insight_generator", END)
     
-    # Set entry point to new orchestrator
+    # Set entry point
     workflow.set_entry_point("platform_orchestrator")
     
     print("✅ Enhanced Multi-Platform Detective Workflow Created!")
-    print("👥 Active Agents: Platform Orchestrator → Analyzer → Calculator → Enhanced Insight Generator")
+    print("👥 Active Agents: Platform Orchestrator → Analyzer → Calculator → Competitive Scorer → Insight Generator")
     
     return workflow.compile()
 
 def enhanced_insight_generation_agent(state: MultiPlatformState) -> MultiPlatformState:
-    """
-    💡 Enhanced Business Insight Generator with Multi-Platform Intelligence
-    """
+    print("💡 Enhanced Insight Generator: Creating advanced competitive business intelligence...")
     
-    print("💡 Enhanced Insight Generator: Creating multi-platform business intelligence...")
+    # Get competitive intelligence - it should be there now
+    competitive_intelligence = state.get("competitive_intelligence", {})
+    print(f"🔧 DEBUG: Competitive intelligence found: {bool(competitive_intelligence)}")
     
-    enabled_platforms = state.get("enabled_platforms", ["google"])
-    sov_metrics = state.get("sov_metrics", {})
-    competitive_landscape = state.get("competitive_landscape", {})
-    youtube_metadata = state.get("youtube_metadata", {})
-    
-    insights = []
-    recommendations = []
-    cross_platform_insights = []
-    platform_recommendations = {}
-    
-    # Original Google insights (maintained for compatibility)
-    if 'atomberg' in sov_metrics:
-        atomberg_data = sov_metrics['atomberg']
-        atomberg_sov = atomberg_data['overall_sov']
+    if competitive_intelligence and not competitive_intelligence.get("error"):
+        competitive_insights = competitive_intelligence.get("competitive_insights", [])
+        print(f"🔧 DEBUG: Found {len(competitive_insights)} competitive insights")
         
-        if atomberg_sov < 15:
-            insights.append(f"🚨 Low market presence: Atomberg has {atomberg_sov:.1f}% SoV")
-            recommendations.append("Increase content marketing and SEO efforts")
-        elif atomberg_sov < 25:
-            insights.append(f"⚠️ Moderate presence: Atomberg at {atomberg_sov:.1f}% SoV")
-            recommendations.append("Focus on high-engagement content to improve visibility")
-        else:
-            insights.append(f"✅ Strong presence: Atomberg leads with {atomberg_sov:.1f}% SoV")
+        # Process competitive recommendations
+        competitive_recommendations = []
+        if "competitive_scores" in competitive_intelligence:
+            competitive_scores = competitive_intelligence["competitive_scores"]
+            if "atomberg" in competitive_scores:
+                atomberg_data = competitive_scores["atomberg"]
+                if atomberg_data["market_presence"] < 70:
+                    competitive_recommendations.append("Increase market presence through content marketing")
+                if atomberg_data["engagement_quality"] < 70:
+                    competitive_recommendations.append("Improve content quality to enhance engagement")
+    else:
+        competitive_insights = []
+        competitive_recommendations = []
+        print("⚠️ No competitive intelligence found or error occurred")
     
-    # NEW: Multi-Platform Insights
-    if len(enabled_platforms) > 1:
-        cross_platform_insights.append(f"🌐 Multi-platform analysis across {len(enabled_platforms)} channels")
-        
-        # YouTube-specific insights
-        if "youtube" in enabled_platforms and youtube_metadata:
-            videos_collected = youtube_metadata.get("videos_collected", 0)
-            comments_collected = youtube_metadata.get("comments_collected", 0)
-            
-            if videos_collected > 0:
-                cross_platform_insights.append(f"🎥 YouTube intelligence: {videos_collected} videos, {comments_collected} comments analyzed")
-                
-                # Video content insights
-                if videos_collected < 20:
-                    cross_platform_insights.append("📺 Limited video content presence - opportunity for video marketing expansion")
-                    platform_recommendations["youtube"] = [
-                        "Create educational content about smart fan installation",
-                        "Develop product comparison videos",
-                        "Partner with home improvement YouTubers"
-                    ]
-                else:
-                    cross_platform_insights.append("🎬 Strong video content ecosystem detected")
-                    platform_recommendations["youtube"] = [
-                        "Optimize existing video content for better discoverability",
-                        "Analyze top-performing video formats for replication"
-                    ]
-        
-        # Google vs YouTube comparison
-        if "google" in enabled_platforms and "youtube" in enabled_platforms:
-            google_results = len([r for r in state.get("raw_search_results", []) if r.get("source") == "google"])
-            youtube_results = len([r for r in state.get("raw_search_results", []) if r.get("source", "").startswith("youtube")])
-            
-            if youtube_results > google_results:
-                cross_platform_insights.append("🎥 Video content dominance: More YouTube presence than traditional search")
-                recommendations.append("Leverage video-first content strategy across all platforms")
-            elif google_results > youtube_results * 2:
-                cross_platform_insights.append("🔍 Search-heavy presence: Strong Google visibility, video content opportunity")
-                recommendations.append("Expand video content creation to match search presence")
+    # Get existing insights
+    existing_insights = state.get("quantitative_insights", [])
+    existing_recommendations = state.get("action_recommendations", [])
     
-    # Platform-specific recommendations
-    if "google" in enabled_platforms:
-        platform_recommendations["google"] = [
-            "Optimize for high-performing keywords identified in analysis",
-            "Improve search ranking through technical SEO"
-        ]
+    # Combine insights
+    all_insights = existing_insights + competitive_insights
+    all_recommendations = existing_recommendations + competitive_recommendations
     
-    print(f"💡 Generated {len(insights)} general insights, {len(cross_platform_insights)} cross-platform insights")
+    print(f"💡 Generated: {len(all_insights)} insights, {len(all_recommendations)} recommendations")
     
-    # Update state with enhanced insights
-    state = log_platform_progress(
-        state, 
-        "insight_generator", 
-        f"Enhanced intelligence generated: {len(insights + cross_platform_insights)} total insights"
-    )
-    
+    # Return only the updates
     return {
-        **state,
-        "quantitative_insights": insights,
-        "action_recommendations": recommendations,
-        "cross_platform_insights": cross_platform_insights,
-        "platform_recommendations": platform_recommendations,
+        "quantitative_insights": all_insights,
+        "action_recommendations": all_recommendations,
         "current_phase": "enhanced_investigation_complete"
     }
 
@@ -235,6 +185,70 @@ def display_multiplatform_summary(state: MultiPlatformState):
             print(f"   • {rec}")
     
     print(f"\n⏱️ Investigation Phase: {state.get('current_phase', 'Unknown')}")
+
+    # Add competitive intelligence summary
+    competitive_intelligence = state.get("competitive_intelligence", {})
+    if competitive_intelligence and "competitive_scores" in competitive_intelligence:
+        print(f"\n🏆 Competitive Intelligence Analysis:")
+        
+        competitive_scores = competitive_intelligence["competitive_scores"]
+        
+        # Show Atomberg's competitive score
+        if "atomberg" in competitive_scores:
+            atomberg_data = competitive_scores["atomberg"]
+            total_score = atomberg_data["total_score"]
+            tier = atomberg_data["performance_tier"]
+            cai = atomberg_data.get("competitive_advantage_index", 0)
+            
+            print(f"   • Atomberg Competitive Score: {total_score:.1f}/100 ({tier})")
+            print(f"   • Competitive Advantage Index: {cai:+.2f}")
+        
+        # Show top competitors
+        sorted_competitors = sorted(competitive_scores.items(), 
+                                  key=lambda x: x[1]["total_score"], reverse=True)
+        
+        print(f"   • Market leader: {sorted_competitors[0][0]} ({sorted_competitors[0][1]['total_score']:.1f}/100)")
+        
+        # Show market positioning
+        market_positioning = competitive_intelligence.get("market_positioning", {})
+        if "atomberg" in market_positioning:
+            position = market_positioning["atomberg"]["position"]
+            print(f"   • Atomberg position: {position}")
+
+    print(f"\n⏱️ Investigation Phase: {state.get('current_phase', 'Unknown')}")
+    
+    # Add competitive intelligence summary with debugging
+    competitive_intelligence = state.get("competitive_intelligence", {})
+    print(f"🔧 DEBUG: Competitive intelligence in display: {bool(competitive_intelligence)}")
+    
+    if competitive_intelligence and "competitive_scores" in competitive_intelligence:
+        print(f"\n🏆 Competitive Intelligence Analysis:")
+        
+        competitive_scores = competitive_intelligence["competitive_scores"]
+        
+        # Show Atomberg's competitive score
+        if "atomberg" in competitive_scores:
+            atomberg_data = competitive_scores["atomberg"]
+            total_score = atomberg_data["total_score"]
+            tier = atomberg_data["performance_tier"]
+            cai = atomberg_data.get("competitive_advantage_index", 0)
+            
+            print(f"   • Atomberg Competitive Score: {total_score:.1f}/100 ({tier})")
+            print(f"   • Competitive Advantage Index: {cai:+.2f}")
+        
+        # Show top competitors
+        sorted_competitors = sorted(competitive_scores.items(), 
+                                  key=lambda x: x[1]["total_score"], reverse=True)
+        
+        print(f"   • Market leader: {sorted_competitors[0][0]} ({sorted_competitors[0][1]['total_score']:.1f}/100)")
+        
+        # Show market positioning
+        market_positioning = competitive_intelligence.get("market_positioning", {})
+        if "atomberg" in market_positioning:
+            position = market_positioning["atomberg"]["position"]
+            print(f"   • Atomberg position: {position}")
+    else:
+        print(f"\n⚠️ Competitive intelligence not available in final state")
 
 # Backward compatibility - existing function names still work
 run_complete_investigation = run_multiplatform_investigation  # Alias for compatibility
