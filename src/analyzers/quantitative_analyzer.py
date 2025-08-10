@@ -7,10 +7,10 @@ import re
 from typing import Dict, List, Any
 from collections import defaultdict
 
-from ..core.detective_state import QuantitativeState, log_progress
+from ..core.detective_state import MultiPlatformState, log_platform_progress
 from config import BRAND_PATTERNS, ENGAGEMENT_FACTORS, PRODUCT_KEYWORDS, get_engagement_score
 
-def quantitative_analysis_agent(state: QuantitativeState) -> QuantitativeState:
+def quantitative_analysis_agent(state: MultiPlatformState) -> MultiPlatformState:
     """
     🔬 Quantitative Analyst Agent
     Analyzes collected data using pure mathematics and pattern matching
@@ -22,7 +22,7 @@ def quantitative_analysis_agent(state: QuantitativeState) -> QuantitativeState:
     
     if not raw_results:
         print("⚠️ No data to analyze")
-        return log_progress(state, "⚠️ Analysis skipped - no data available")
+        return log_platform_progress(state,"google", "⚠️ Analysis skipped - no data available")
     
     print(f"🔬 Analyzing {len(raw_results)} pieces of evidence...")
     
@@ -82,7 +82,7 @@ def quantitative_analysis_agent(state: QuantitativeState) -> QuantitativeState:
     print(f"   • Top keywords: {sorted(keyword_frequency.items(), key=lambda x: x[1], reverse=True)[:5]}")
     
     # Update state with analysis results
-    state = log_progress(state, f"📊 Quantitative analysis completed: {len(brand_mentions)} brands, {sum(brand_mentions.values())} total mentions")
+    state = log_platform_progress(state,"google", f"📊 Quantitative analysis completed: {len(brand_mentions)} brands, {sum(brand_mentions.values())} total mentions")
     
     return {
         **state,

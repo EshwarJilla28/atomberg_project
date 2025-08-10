@@ -16,7 +16,7 @@ import random
 from datetime import datetime
 from typing import List, Dict
 
-from ..core.detective_state import QuantitativeState, log_progress, log_error
+from ..core.detective_state import MultiPlatformState, log_platform_progress, log_error
 from config import SEARCH_CONFIG, CHROME_OPTIONS, get_search_queries
 
 
@@ -160,7 +160,7 @@ def extract_result_data(container, index, query, selector_type):
         return None
 
 
-def google_search_agent(state: QuantitativeState) -> QuantitativeState:
+def google_search_agent(state: MultiPlatformState) -> MultiPlatformState:
     """
     🕵️ Enhanced Google Search Detective
     Collects evidence from Google search results using human-like behavior
@@ -172,7 +172,7 @@ def google_search_agent(state: QuantitativeState) -> QuantitativeState:
     target_results = state["target_results"]
     
     # Update state to show we're starting
-    state = log_progress(state, f"🔍 Starting Google search for: '{search_query}'")
+    state = log_platform_progress(state,"google", f"🔍 Starting Google search for: '{search_query}'")
     
     # Generate search queries
     search_queries = get_search_queries(search_query)
@@ -290,7 +290,7 @@ def google_search_agent(state: QuantitativeState) -> QuantitativeState:
             print("🔄 Consider using sample data fallback for development")
         
         # Update state with results
-        state = log_progress(state, f"🔍 Enhanced Google search completed: {len(all_results)} results from {len(search_queries)} queries")
+        state = log_platform_progress(state,"google", f"🔍 Enhanced Google search completed: {len(all_results)} results from {len(search_queries)} queries")
         
         return {
             **state,

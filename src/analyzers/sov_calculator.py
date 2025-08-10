@@ -4,10 +4,10 @@ Pure mathematical SoV calculations and competitive analysis
 """
 
 from typing import Dict,List,Any
-from ..core.detective_state import QuantitativeState, log_progress
+from ..core.detective_state import MultiPlatformState, log_platform_progress
 from config import SOV_WEIGHTS
 
-def sov_calculation_agent(state: QuantitativeState) -> QuantitativeState:
+def sov_calculation_agent(state: MultiPlatformState) -> MultiPlatformState:
     """
     📊 Share of Voice Calculator
     Calculates competitive positioning using quantitative metrics
@@ -21,7 +21,7 @@ def sov_calculation_agent(state: QuantitativeState) -> QuantitativeState:
     
     if not brand_mentions:
         print("⚠️ No brand data available for SoV calculation")
-        return log_progress(state, "⚠️ SoV calculation skipped - no brand data")
+        return log_platform_progress(state, "google", "⚠️ SoV calculation skipped - no brand data")
     
     # Calculate total market metrics
     total_mentions = sum(brand_mentions.values())
@@ -92,7 +92,7 @@ def sov_calculation_agent(state: QuantitativeState) -> QuantitativeState:
     print(f"   • Engagement Share: {atomberg_metrics.get('engagement_share', 0):.1f}%")
     
     # Update state
-    state = log_progress(state, f"📈 SoV calculation completed: Atomberg {atomberg_sov:.1f}% overall SoV")
+    state = log_platform_progress(state,"google", f"📈 SoV calculation completed: Atomberg {atomberg_sov:.1f}% overall SoV")
     
     return {
         **state,

@@ -25,3 +25,4 @@ pydantic>=2.5.0
 
 # === DEVELOPMENT TOOLS ===
 pytest==7.4.0
+google-api-python-client==2.108.0
