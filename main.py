@@ -45,6 +45,13 @@ Examples:
         help="Enable detailed logging output"
     )
     
+    parser.add_argument(
+        "--focus_brand",
+        type=str,
+        default="atomberg",
+        help="Brand to focus on during investigation (default: 'atomberg')"
+    )
+    
     return parser.parse_args()
 
 def main():
@@ -69,6 +76,7 @@ def main():
     
     print(f"🎯 Investigation Target: '{args.query}'")
     print(f"📱 Enabled Platforms: {', '.join(platforms)}")
+    print(f"🏷️ Focus Brand: '{args.focus_brand}'")
     
     # Validate platforms
     supported_platforms = ["google", "youtube"]
@@ -81,7 +89,7 @@ def main():
     
     try:
         # Run the multi-platform investigation
-        results = run_multiplatform_investigation(args.query, platforms)
+        results = run_multiplatform_investigation(args.query, platforms, focus_brand=args.focus_brand)
         
         print(f"\n🎊 Multi-platform investigation completed successfully!")
         print(f"📊 Results saved to investigation: {results['investigation_id']}")
@@ -124,6 +132,9 @@ def save_investigation_results(results):
         "recommendations": results.get("action_recommendations", []),
         "cross_platform_insights": results.get("cross_platform_insights", [])
     }
+    
+    if "platform_breakdown" in results:
+        serializable_results["platform_breakdown"] = results["platform_breakdown"]
     
     try:
         with open(filename, 'w') as f:

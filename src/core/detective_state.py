@@ -166,11 +166,29 @@ def merge_platform_results(state: MultiPlatformState) -> MultiPlatformState:
         unified_youtube = convert_youtube_to_unified_format(state["youtube_results"])
         all_results.extend(unified_youtube)
     
+    # Deduplicate by 'id', keep first occurrence
+    seen_ids = set()
+    deduped_results = []
+    duplicates_count = 0
+    for result in all_results:
+        result_id = result.get("id")
+        if result_id is None:
+            # Include results without id as is
+            deduped_results.append(result)
+        elif result_id not in seen_ids:
+            seen_ids.add(result_id)
+            deduped_results.append(result)
+        else:
+            duplicates_count += 1
+    
+    if duplicates_count > 0:
+        print(f"🔍 Deduplication removed {duplicates_count} duplicate results.")
+    
     # Update the main results field for backward compatibility
     return {
         **state,
-        "raw_search_results": all_results,  # Maintains compatibility
-        "unified_results": all_results      # New unified field
+        "raw_search_results": deduped_results,  # Maintains compatibility
+        "unified_results": deduped_results      # New unified field
     }
 
 def convert_youtube_to_unified_format(youtube_results: List[Dict]) -> List[Dict]:
@@ -229,4 +247,3 @@ def log_error(state: MultiPlatformState, error_msg: str, recovery_msg: str) -> M
         "errors_log": updated_errors,
         "investigation_log": updated_log
     }
-

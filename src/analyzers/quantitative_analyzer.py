@@ -4,7 +4,7 @@ Pure math and pattern matching - no NLP required!
 """
 
 import re
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 from collections import defaultdict
 
 from ..core.detective_state import MultiPlatformState, log_platform_progress
@@ -27,6 +27,7 @@ def quantitative_analysis_agent(state: MultiPlatformState) -> MultiPlatformState
     print(f"🔬 Analyzing {len(raw_results)} pieces of evidence...")
     
     # Initialize analysis containers
+    brand_mentions_raw = defaultdict(int)
     brand_mentions = defaultdict(int)
     engagement_scores = defaultdict(float)
     keyword_frequency = defaultdict(int)
@@ -41,7 +42,7 @@ def quantitative_analysis_agent(state: MultiPlatformState) -> MultiPlatformState
         position = result.get('position', 0)
         
         # === BRAND DETECTION (Pattern Matching) ===
-        detected_brands = detect_brands_in_content(content)
+        detected_brands_capped, detected_brands_raw = detect_brands_in_content(content)
         
         # === ENGAGEMENT CALCULATION (Pure Math) ===
         engagement = get_engagement_score(content, url, title)
@@ -49,11 +50,18 @@ def quantitative_analysis_agent(state: MultiPlatformState) -> MultiPlatformState
         # === KEYWORD FREQUENCY ANALYSIS ===
         keywords = analyze_keyword_frequency(content)
         
-        # Aggregate results
-        for brand, count in detected_brands.items():
+        # Aggregate raw mention results
+        for brand, count in detected_brands_raw.items():
+            brand_mentions_raw[brand] += count
+        
+        # Aggregate capped mention results and engagement scores
+        for brand, count in detected_brands_capped.items():
             brand_mentions[brand] += count
-            engagement_scores[brand] += engagement / len(detected_brands) if detected_brands else 0
-            position_analysis[brand].append(position)
+        
+        if detected_brands_capped:
+            for brand in detected_brands_capped:
+                engagement_scores[brand] += engagement / len(detected_brands_capped)
+                position_analysis[brand].append(position)
         
         for keyword, freq in keywords.items():
             keyword_frequency[keyword] += freq
@@ -64,28 +72,31 @@ def quantitative_analysis_agent(state: MultiPlatformState) -> MultiPlatformState
             "title": title,
             "url": url,
             "position": position,
-            "brands_detected": detected_brands,
+            "brands_detected_raw": detected_brands_raw,
+            "brands_detected": detected_brands_capped,
             "engagement_score": engagement,
             "keywords_found": keywords,
             "content_preview": content[:200] + "..." if len(content) > 200 else content
         })
     
     # Convert defaultdicts to regular dicts
+    brand_mentions_raw = dict(brand_mentions_raw)
     brand_mentions = dict(brand_mentions)
     engagement_scores = dict(engagement_scores)
     keyword_frequency = dict(keyword_frequency)
     position_analysis = dict(position_analysis)
     
     print(f"📊 Analysis Results:")
-    print(f"   • Brands detected: {list(brand_mentions.keys())}")
-    print(f"   • Total brand mentions: {sum(brand_mentions.values())}")
+    print(f"   • Brands detected (capped): {list(brand_mentions.keys())}")
+    print(f"   • Total brand mentions (raw): {sum(brand_mentions_raw.values())}")
     print(f"   • Top keywords: {sorted(keyword_frequency.items(), key=lambda x: x[1], reverse=True)[:5]}")
     
     # Update state with analysis results
-    state = log_platform_progress(state,"google", f"📊 Quantitative analysis completed: {len(brand_mentions)} brands, {sum(brand_mentions.values())} total mentions")
+    state = log_platform_progress(state,"google", f"📊 Quantitative analysis completed: {len(brand_mentions)} brands, {sum(brand_mentions_raw.values())} total raw mentions")
     
     return {
         **state,
+        "brand_mentions_raw": brand_mentions_raw,
         "brand_mentions": brand_mentions,
         "engagement_scores": engagement_scores,
         "keyword_frequency": keyword_frequency,
@@ -94,12 +105,16 @@ def quantitative_analysis_agent(state: MultiPlatformState) -> MultiPlatformState
         "current_phase": "quantitative_analysis_complete"
     }
 
-def detect_brands_in_content(content: str) -> Dict[str, int]:
+def detect_brands_in_content(content: str) -> Tuple[Dict[str, int], Dict[str, int]]:
     """
     🎯 Detect brand mentions using regex patterns
+    Returns two dicts:
+    - capped mentions (max 1 per brand per content)
+    - raw mention counts
     """
     content_lower = content.lower()
-    brand_counts = {}
+    brand_counts_raw = {}
+    brand_counts_capped = {}
     
     for brand, patterns in BRAND_PATTERNS.items():
         total_mentions = 0
@@ -108,9 +123,10 @@ def detect_brands_in_content(content: str) -> Dict[str, int]:
             total_mentions += len(matches)
         
         if total_mentions > 0:
-            brand_counts[brand] = total_mentions
+            brand_counts_raw[brand] = total_mentions
+            brand_counts_capped[brand] = 1
     
-    return brand_counts
+    return brand_counts_capped, brand_counts_raw
 
 def analyze_keyword_frequency(content: str) -> Dict[str, int]:
     """

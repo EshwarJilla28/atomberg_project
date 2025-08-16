@@ -4,7 +4,7 @@ Maintains backward compatibility while adding multi-platform orchestration
 """
 
 from langgraph.graph import StateGraph, END
-from ..core.detective_state import MultiPlatformState, create_multiplatform_state, log_platform_progress
+from ..core.detective_state import MultiPlatformState, create_multiplatform_state
 from ..core.platform_orchestrator import platform_orchestration_agent
 from ..analyzers.quantitative_analyzer import quantitative_analysis_agent  
 from ..analyzers.sov_calculator import sov_calculation_agent
@@ -46,6 +46,8 @@ def create_multiplatform_workflow() -> StateGraph:
 def enhanced_insight_generation_agent(state: MultiPlatformState) -> MultiPlatformState:
     print("💡 Enhanced Insight Generator: Creating advanced competitive business intelligence...")
     
+    focus_brand = state.get("focus_brand", "atomberg")
+    
     # Get competitive intelligence - it should be there now
     competitive_intelligence = state.get("competitive_intelligence", {})
     print(f"🔧 DEBUG: Competitive intelligence found: {bool(competitive_intelligence)}")
@@ -58,11 +60,11 @@ def enhanced_insight_generation_agent(state: MultiPlatformState) -> MultiPlatfor
         competitive_recommendations = []
         if "competitive_scores" in competitive_intelligence:
             competitive_scores = competitive_intelligence["competitive_scores"]
-            if "atomberg" in competitive_scores:
-                atomberg_data = competitive_scores["atomberg"]
-                if atomberg_data["market_presence"] < 70:
+            if focus_brand in competitive_scores:
+                brand_data = competitive_scores[focus_brand]
+                if brand_data["market_presence"] < 70:
                     competitive_recommendations.append("Increase market presence through content marketing")
-                if atomberg_data["engagement_quality"] < 70:
+                if brand_data["engagement_quality"] < 70:
                     competitive_recommendations.append("Improve content quality to enhance engagement")
     else:
         competitive_insights = []
@@ -88,7 +90,8 @@ def enhanced_insight_generation_agent(state: MultiPlatformState) -> MultiPlatfor
 
 def run_multiplatform_investigation(
     search_query: str = "smart fan", 
-    platforms: List[str] = ["google"]
+    platforms: List[str] = ["google"],
+    focus_brand: str = "atomberg"
 ) -> MultiPlatformState:
     """
     🚀 Execute Complete Multi-Platform SoV Investigation
@@ -106,6 +109,7 @@ def run_multiplatform_investigation(
     
     # Initialize multi-platform investigation
     initial_state = create_multiplatform_state(search_query, platforms)
+    initial_state["focus_brand"] = focus_brand
     
     print(f"📁 Investigation ID: {initial_state['investigation_id']}")
     print(f"🎯 Platforms enabled: {len(platforms)} ({', '.join(platforms)})")
@@ -141,12 +145,31 @@ def display_multiplatform_summary(state: MultiPlatformState):
     print(f"   • Total results processed: {raw_results}")
     
     # Platform breakdown
+    platform_breakdown = {}
     if len(enabled_platforms) > 1:
         google_results = len([r for r in state.get("raw_search_results", []) if r.get("source") == "google"])
         youtube_results = len([r for r in state.get("raw_search_results", []) if r.get("source", "").startswith("youtube")])
         
         print(f"   • Google results: {google_results}")
         print(f"   • YouTube results: {youtube_results}")
+        platform_breakdown = {
+            "platforms": enabled_platforms,
+            "results_count": {
+                "google": google_results,
+                "youtube": youtube_results
+            }
+        }
+    else:
+        # Even if single platform, count results for it
+        platform_breakdown = {
+            "platforms": enabled_platforms,
+            "results_count": {
+                enabled_platforms[0]: raw_results
+            }
+        }
+    
+    # Attach platform breakdown to state for possible saving
+    state["platform_breakdown"] = platform_breakdown
     
     # Brand analysis
     brands_found = len(state.get("brand_mentions", {}))
@@ -156,12 +179,13 @@ def display_multiplatform_summary(state: MultiPlatformState):
     
     # SoV metrics
     sov_metrics = state.get("sov_metrics", {})
-    if 'atomberg' in sov_metrics:
-        atomberg = sov_metrics['atomberg']
-        print(f"\n🎯 Atomberg Performance:")
-        print(f"   • Overall SoV: {atomberg['overall_sov']:.1f}%")
-        print(f"   • Mention Share: {atomberg['mention_share']:.1f}%")
-        print(f"   • Engagement Share: {atomberg['engagement_share']:.1f}%")
+    focus_brand = state.get("focus_brand", "atomberg")
+    if focus_brand in sov_metrics:
+        brand_metrics = sov_metrics[focus_brand]
+        print(f"\n🎯 {focus_brand.capitalize()} Performance:")
+        print(f"   • Overall SoV: {brand_metrics['overall_sov']:.1f}%")
+        print(f"   • Mention Share: {brand_metrics['mention_share']:.1f}%")
+        print(f"   • Engagement Share: {brand_metrics['engagement_share']:.1f}%")
     
     # Multi-platform insights
     cross_platform_insights = state.get("cross_platform_insights", [])
@@ -193,14 +217,14 @@ def display_multiplatform_summary(state: MultiPlatformState):
         
         competitive_scores = competitive_intelligence["competitive_scores"]
         
-        # Show Atomberg's competitive score
-        if "atomberg" in competitive_scores:
-            atomberg_data = competitive_scores["atomberg"]
-            total_score = atomberg_data["total_score"]
-            tier = atomberg_data["performance_tier"]
-            cai = atomberg_data.get("competitive_advantage_index", 0)
+        # Show focus brand's competitive score
+        if focus_brand in competitive_scores:
+            brand_data = competitive_scores[focus_brand]
+            total_score = brand_data["total_score"]
+            tier = brand_data["performance_tier"]
+            cai = brand_data.get("competitive_advantage_index", 0)
             
-            print(f"   • Atomberg Competitive Score: {total_score:.1f}/100 ({tier})")
+            print(f"   • {focus_brand.capitalize()} Competitive Score: {total_score:.1f}/100 ({tier})")
             print(f"   • Competitive Advantage Index: {cai:+.2f}")
         
         # Show top competitors
@@ -211,42 +235,10 @@ def display_multiplatform_summary(state: MultiPlatformState):
         
         # Show market positioning
         market_positioning = competitive_intelligence.get("market_positioning", {})
-        if "atomberg" in market_positioning:
-            position = market_positioning["atomberg"]["position"]
-            print(f"   • Atomberg position: {position}")
+        if focus_brand in market_positioning:
+            position = market_positioning[focus_brand]["position"]
+            print(f"   • {focus_brand.capitalize()} position: {position}")
 
-    print(f"\n⏱️ Investigation Phase: {state.get('current_phase', 'Unknown')}")
-    
-    # Add competitive intelligence summary with debugging
-    competitive_intelligence = state.get("competitive_intelligence", {})
-    print(f"🔧 DEBUG: Competitive intelligence in display: {bool(competitive_intelligence)}")
-    
-    if competitive_intelligence and "competitive_scores" in competitive_intelligence:
-        print(f"\n🏆 Competitive Intelligence Analysis:")
-        
-        competitive_scores = competitive_intelligence["competitive_scores"]
-        
-        # Show Atomberg's competitive score
-        if "atomberg" in competitive_scores:
-            atomberg_data = competitive_scores["atomberg"]
-            total_score = atomberg_data["total_score"]
-            tier = atomberg_data["performance_tier"]
-            cai = atomberg_data.get("competitive_advantage_index", 0)
-            
-            print(f"   • Atomberg Competitive Score: {total_score:.1f}/100 ({tier})")
-            print(f"   • Competitive Advantage Index: {cai:+.2f}")
-        
-        # Show top competitors
-        sorted_competitors = sorted(competitive_scores.items(), 
-                                  key=lambda x: x[1]["total_score"], reverse=True)
-        
-        print(f"   • Market leader: {sorted_competitors[0][0]} ({sorted_competitors[0][1]['total_score']:.1f}/100)")
-        
-        # Show market positioning
-        market_positioning = competitive_intelligence.get("market_positioning", {})
-        if "atomberg" in market_positioning:
-            position = market_positioning["atomberg"]["position"]
-            print(f"   • Atomberg position: {position}")
     else:
         print(f"\n⚠️ Competitive intelligence not available in final state")
 

@@ -39,6 +39,7 @@ class CompetitiveIntelligenceScorer:
         engagement_scores = state.get("engagement_scores", {})
         sov_metrics = state.get("sov_metrics", {})
         position_analysis = state.get("position_analysis", {})
+        focus_brand = state.get("focus_brand", "atomberg")
         
         if not brand_mentions:
             print("⚠️ Insufficient brand data for competitive scoring")
@@ -78,13 +79,13 @@ class CompetitiveIntelligenceScorer:
             # Step 3: Perform market positioning analysis
             print("🎯 Step 6: Performing market positioning analysis...")
             market_positioning = self._perform_market_positioning_analysis(
-                competitive_scores, sov_metrics
+                competitive_scores, sov_metrics, focus_brand
             )
             
             # Step 4: Generate competitive intelligence insights
             print("💡 Step 7: Generating competitive intelligence insights...")
             competitive_insights = self._generate_competitive_insights(
-                competitive_scores, market_positioning, brand_mentions
+                competitive_scores, market_positioning, brand_mentions, focus_brand
             )
             
             # Package results
@@ -156,7 +157,7 @@ class CompetitiveIntelligenceScorer:
                 volume_score * 0.25 + 
                 position_score * 0.15
             )
-            
+            presence_score = min(100, presence_score)
             presence_scores[brand] = round(presence_score, 2)
         
         return presence_scores
@@ -187,7 +188,7 @@ class CompetitiveIntelligenceScorer:
                 quality_score = (brand_engagement_per_mention / max_engagement_per_mention) * 100
             else:
                 quality_score = 0
-            
+            quality_score = min(100, quality_score)
             quality_scores[brand] = round(quality_score, 2)
         
         return quality_scores
@@ -227,6 +228,7 @@ class CompetitiveIntelligenceScorer:
             
             # Weighted position score
             position_score = rank_score * 0.70 + gap_score * 0.30
+            position_score = min(100, position_score)
             position_scores[brand] = round(position_score, 2)
         
         return position_scores
@@ -301,7 +303,7 @@ class CompetitiveIntelligenceScorer:
                 position_score * self.scoring_weights['competitive_position'] +
                 dynamics_score * self.scoring_weights['market_dynamics']
             )
-            
+            total_score = min(100, total_score)
             brand_scores.append(total_score)
             
             competitive_scores[brand] = {
@@ -353,7 +355,7 @@ class CompetitiveIntelligenceScorer:
             return "Significant Competitive Disadvantage"
     
     def _perform_market_positioning_analysis(self, competitive_scores: Dict, 
-                                           sov_metrics: Dict) -> Dict[str, Any]:
+                                           sov_metrics: Dict, focus_brand: str) -> Dict[str, Any]:
         """
         🎯 Perform BCG Matrix-style market positioning analysis
         """
@@ -381,14 +383,14 @@ class CompetitiveIntelligenceScorer:
             positioning[brand] = {
                 "position": position,
                 "description": description,
-                "strategic_priority": self._determine_strategic_priority(position, brand)
+                "strategic_priority": self._determine_strategic_priority(position, brand, focus_brand)
             }
         
         return positioning
     
-    def _determine_strategic_priority(self, position: str, brand: str) -> str:
+    def _determine_strategic_priority(self, position: str, brand: str, focus_brand: str) -> str:
         """Determine strategic priority based on market position"""
-        if brand.lower() == "atomberg":
+        if brand.lower() == focus_brand.lower():
             if position == "STAR":
                 return "Maintain leadership and expand market share"
             elif position == "CASH_COW":
@@ -401,7 +403,7 @@ class CompetitiveIntelligenceScorer:
             return f"Monitor {position} competitor positioning"
     
     def _generate_competitive_insights(self, competitive_scores: Dict, 
-                                     market_positioning: Dict, brand_mentions: Dict) -> List[str]:
+                                     market_positioning: Dict, brand_mentions: Dict, focus_brand: str) -> List[str]:
         """
         💡 Generate strategic competitive intelligence insights
         """
@@ -417,40 +419,47 @@ class CompetitiveIntelligenceScorer:
         
         insights.append(f"🏆 Market leader: {market_leader} with {leader_score:.1f}/100 competitive score")
         
-        # Atomberg-specific insights
-        if "atomberg" in competitive_scores:
-            atomberg_data = competitive_scores["atomberg"]
-            atomberg_score = atomberg_data["total_score"]
-            atomberg_rank = next(i+1 for i, (brand, _) in enumerate(sorted_scores) if brand == "atomberg")
-            cai = atomberg_data.get("competitive_advantage_index", 0)
+        # Focus brand-specific insights
+        focus_brand_lc = focus_brand.lower()
+        # Find the actual brand key matching focus_brand (case-insensitive)
+        brand_key = None
+        for b in competitive_scores.keys():
+            if b.lower() == focus_brand_lc:
+                brand_key = b
+                break
+        if brand_key is not None:
+            focus_data = competitive_scores[brand_key]
+            focus_score = focus_data["total_score"]
+            focus_rank = next(i+1 for i, (brand, _) in enumerate(sorted_scores) if brand.lower() == focus_brand_lc)
+            cai = focus_data.get("competitive_advantage_index", 0)
             
-            insights.append(f"🎯 Atomberg: {atomberg_score:.1f}/100 score, Rank #{atomberg_rank}, CAI: {cai:+.2f}")
+            insights.append(f"🎯 {brand_key}: {focus_score:.1f}/100 score, Rank #{focus_rank}, CAI: {cai:+.2f}")
             
             # Performance analysis
             strongest_factor = max(
-                [("Market Presence", atomberg_data["market_presence"]),
-                 ("Engagement Quality", atomberg_data["engagement_quality"]),
-                 ("Competitive Position", atomberg_data["competitive_position"]),
-                 ("Market Dynamics", atomberg_data["market_dynamics"])],
+                [("Market Presence", focus_data["market_presence"]),
+                 ("Engagement Quality", focus_data["engagement_quality"]),
+                 ("Competitive Position", focus_data["competitive_position"]),
+                 ("Market Dynamics", focus_data["market_dynamics"])],
                 key=lambda x: x[1]
             )
             
             weakest_factor = min(
-                [("Market Presence", atomberg_data["market_presence"]),
-                 ("Engagement Quality", atomberg_data["engagement_quality"]),
-                 ("Competitive Position", atomberg_data["competitive_position"]),
-                 ("Market Dynamics", atomberg_data["market_dynamics"])],
+                [("Market Presence", focus_data["market_presence"]),
+                 ("Engagement Quality", focus_data["engagement_quality"]),
+                 ("Competitive Position", focus_data["competitive_position"]),
+                 ("Market Dynamics", focus_data["market_dynamics"])],
                 key=lambda x: x[1]
             )
             
-            insights.append(f"💪 Atomberg strength: {strongest_factor[0]} ({strongest_factor[1]:.1f}/100)")
-            insights.append(f"🎯 Atomberg opportunity: {weakest_factor[0]} ({weakest_factor[1]:.1f}/100)")
+            insights.append(f"💪 {brand_key} strength: {strongest_factor[0]} ({strongest_factor[1]:.1f}/100)")
+            insights.append(f"🎯 {brand_key} opportunity: {weakest_factor[0]} ({weakest_factor[1]:.1f}/100)")
             
             # Strategic positioning
-            atomberg_position = market_positioning.get("atomberg", {})
-            if atomberg_position:
-                position = atomberg_position["position"]
-                priority = atomberg_position["strategic_priority"]
+            focus_position = market_positioning.get(brand_key, {})
+            if focus_position:
+                position = focus_position["position"]
+                priority = focus_position["strategic_priority"]
                 insights.append(f"📍 Strategic position: {position} - {priority}")
         
         # Market concentration insight
